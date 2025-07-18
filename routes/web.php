@@ -12,7 +12,7 @@ Route::get('/overview', function () {
 
 // Data untuk Doughnut Chart dari tabel news
 Route::get('/overview/sentiment-data', [SentimentDonatController::class, 'getSentimentData']);
-Route::get('/overview/sentiment-bar-data', [SentimentBarChartController::class, 'getBarData']);
+Route::get('/api/sentiment-bar-data', [SentimentBarChartController::class, 'getBarData']);
 Route::get('/overview/chart-24h-sentiment', [TrendSentiment::class, 'get24HourSentimentTrend']);
 
 // Halaman Sources

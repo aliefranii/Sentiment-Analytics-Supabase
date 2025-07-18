@@ -11,6 +11,20 @@ function renderDoughnutChart(range = 'this_month') {
     fetch(`/overview/sentiment-data?range=${range}`)
         .then(res => res.json())
         .then(data => {
+            // Memeriksa apakah ada pesan 'no data'
+            if (data.message) {
+                // Menyembunyikan canvas dan custom legend, serta menampilkan pesan jika tidak ada data
+                document.getElementById('sentimentChart').style.display = 'none';  // Menyembunyikan canvas
+                document.getElementById('custom-legend').style.display = 'none';  // Menyembunyikan legend
+                document.getElementById('noDataMessage').style.display = 'block';  // Menampilkan pesan
+                return;  // Menghentikan eksekusi lebih lanjut jika tidak ada data
+            }
+
+            // Menyembunyikan pesan, menampilkan canvas dan custom legend jika ada data
+            document.getElementById('sentimentChart').style.display = 'block';  // Menampilkan canvas
+            document.getElementById('custom-legend').style.display = 'flex';  // Menampilkan legend
+            document.getElementById('noDataMessage').style.display = 'none';  // Menyembunyikan pesan
+
             const total = data.reduce((acc, item) => acc + item.total, 0);
             const colorMap = {
                 positive: '#0FAF62',
@@ -32,6 +46,7 @@ function renderDoughnutChart(range = 'this_month') {
             const values = labels.map(key => labelMap[key]);
             const colors = labels.map(label => colorMap[label] || '#ccc');
 
+            // Destroy chart instance jika sudah ada
             if (sentimentChartInstance) {
                 sentimentChartInstance.destroy();
             }
@@ -69,6 +84,7 @@ function renderDoughnutChart(range = 'this_month') {
                 }
             });
 
+            // Update custom legend
             const legendContainer = document.getElementById('custom-legend');
             legendContainer.innerHTML = '';
             labels.forEach((label, i) => {
@@ -88,10 +104,12 @@ function renderDoughnutChart(range = 'this_month') {
                 legendContainer.appendChild(item);
             });
         })
-        .catch(error => console.error('Error fetching sentiment data:', error));
+        .catch(error => {
+            console.error('Error loading sentiment data:', error);
+        });
 }
 
-// ==== 24H SENTIMENT TREND ====
+// ==== 24H SENTIMENT TREND ==== 
 function render24HourTrendChart() {
     fetch('/overview/chart-24h-sentiment')
         .then(res => res.json())
@@ -143,6 +161,7 @@ function render24HourTrendChart() {
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
                         title: {
@@ -170,13 +189,25 @@ function render24HourTrendChart() {
         });
 }
 
-// ==== BAR CHART ====
+// ==== BAR CHART ==== 
 function renderBarChart(range = 'this_month') {
-    fetch(`/overview/sentiment-bar-data?range=${range}`)
+    fetch(`/api/sentiment-bar-data?range=${range}`)
         .then(res => res.json())
         .then(data => {
-            const grouped = {};
+            // Memeriksa jika tidak ada data
+            if (data.message) {
+                // Menyembunyikan canvas dan custom legend, serta menampilkan pesan jika tidak ada data
+                document.getElementById('sentimentBarChart').style.display = 'none';  // Menyembunyikan canvas
+                document.getElementById('noDataMessagebar').style.display = 'block';  // Menampilkan pesan no data
+                return;  // Menghentikan eksekusi lebih lanjut jika tidak ada data
+            }
 
+            // Menyembunyikan pesan, menampilkan canvas jika ada data
+            document.getElementById('sentimentBarChart').style.display = 'block';  // Menampilkan canvas
+            document.getElementById('noDataMessagebar').style.display = 'none';  // Menyembunyikan pesan no data
+
+            // Grouping the data by source and sentiment
+            const grouped = {};
             data.forEach(item => {
                 const source = item.source;
                 const sentiment = item.sentiment.toLowerCase();
@@ -258,6 +289,9 @@ function renderBarChart(range = 'this_month') {
         })
         .catch(err => {
             console.error('Error loading sentiment bar data:', err);
+            // Handle error when API fails
+            document.getElementById('sentimentBarChart').style.display = 'none';  // Menyembunyikan canvas
+            document.getElementById('noDataMessage').style.display = 'block';  // Menampilkan pesan error
         });
 }
 

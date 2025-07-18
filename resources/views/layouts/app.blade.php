@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/phosphor-icons@1.4.2/src/css/icons.min.css" rel="stylesheet">
 
     <!-- Styles / Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/sentiment.js'])
 
 </head>
 
@@ -24,11 +24,10 @@
         <x-card-statistic></x-card-statistic>
         <x-navtabs>
         </x-navtabs>
-
         @yield('content')
     </div>
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
-    @yield('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 
 </html>

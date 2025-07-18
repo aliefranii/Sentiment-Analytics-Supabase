@@ -26,6 +26,7 @@ class TrendSentiment extends Controller
             ->orderBy(DB::raw("FLOOR(EXTRACT(HOUR FROM created_at) / 4)"))
             ->get();
 
+
         return response()->json($data);
     }
 }

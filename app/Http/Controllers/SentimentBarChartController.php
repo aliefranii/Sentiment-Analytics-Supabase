@@ -52,6 +52,10 @@ class SentimentBarChartController extends Controller
             ->groupBy('source', 'sentiment')
             ->get();
 
+        if ($data->isEmpty()) {
+            return response()->json(['message' => 'Belum ada data hari ini']);
+        }
+
         return response()->json($data);
     }
 }
