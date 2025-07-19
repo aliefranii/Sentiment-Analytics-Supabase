@@ -1,8 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="p-5">
-        <h1 class="text-xl font-bold">Mentions</h1>
-        <p>Ini adalah halaman untuk Mentions.</p>
+    <div class="flex flex-col space-y-4 rtl:space-y-reverse">
+        <div class="flex flex-col lg:flex-row space-y-4 lg:space-x-4 w-full">
+            <div class="flex-1 w-full">
+                <x-container></x-container>
+            </div>
+            <div class="flex w-full">
+                <x-container></x-container>
+            </div>
+        </div>
     </div>
 @endsection
