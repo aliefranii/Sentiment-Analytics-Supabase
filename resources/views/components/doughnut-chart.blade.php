@@ -47,7 +47,7 @@
             <!-- Canvas yang mengisi penuh dengan kontainer -->
             <canvas id="sentimentChart" class="w-full h-full"></canvas>
             <p id="noDataMessage" class="hidden text-gray-500 text-center mt-4">
-                Belum ada data hari ini
+                Belum ada data
             </p>
         </div>
         <div id="custom-legend" class="flex flex-wrap justify-center gap-6 mt-4 text-xs text-gray-700 font-medium">

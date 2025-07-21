@@ -47,7 +47,7 @@
         <div class="flex items-center justify-center min-w-[600px] h-[340px]">
             <canvas id="sentimentBarChart" class="w-full h-full"></canvas>
             <p id="noDataMessagebar" class="hidden text-gray-500 text-center mt-4">
-                Belum ada data hari ini
+                Belum ada data
             </p>
         </div>
     </div>
