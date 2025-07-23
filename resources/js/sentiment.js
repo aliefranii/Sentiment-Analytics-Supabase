@@ -6,47 +6,61 @@ function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// ==== DOUGHNUT CHART ====
 function renderDoughnutChart(range = 'this_month') {
     fetch(`/overview/sentiment-data?range=${range}`)
         .then(res => res.json())
         .then(data => {
-            // Memeriksa apakah ada pesan 'no data'
-            if (data.message) {
-                // Menyembunyikan canvas dan custom legend, serta menampilkan pesan jika tidak ada data
-                document.getElementById('sentimentChart').style.display = 'none';  // Menyembunyikan canvas
-                document.getElementById('custom-legend').style.display = 'none';  // Menyembunyikan legend
-                document.getElementById('noDataMessage').style.display = 'block';  // Menampilkan pesan
-                return;  // Menghentikan eksekusi lebih lanjut jika tidak ada data
+            if (!data || data.message || data.length === 0) {
+                document.getElementById('sentimentChart').style.display = 'none';
+                document.getElementById('custom-legend').style.display = 'none';
+                document.getElementById('noDataMessage').style.display = 'block';
+                return;
             }
 
-            // Menyembunyikan pesan, menampilkan canvas dan custom legend jika ada data
-            document.getElementById('sentimentChart').style.display = 'block';  // Menampilkan canvas
-            document.getElementById('custom-legend').style.display = 'flex';  // Menampilkan legend
-            document.getElementById('noDataMessage').style.display = 'none';  // Menyembunyikan pesan
+            document.getElementById('sentimentChart').style.display = 'block';
+            document.getElementById('custom-legend').style.display = 'flex';
+            document.getElementById('noDataMessage').style.display = 'none';
 
             const total = data.reduce((acc, item) => acc + item.total, 0);
+
+            if (total === 0) {
+                document.getElementById('noDataMessage').textContent = 'Data tersedia, tapi semua total = 0';
+                document.getElementById('noDataMessage').style.display = 'block';
+                document.getElementById('sentimentChart').style.display = 'none';
+                document.getElementById('custom-legend').style.display = 'none';
+                return;
+            }
+
             const colorMap = {
                 positive: '#0FAF62',
                 neutral: '#7B878C',
-                negative: '#E84646'
+                negative: '#E84646',
+                default: '#ccc'
             };
 
-            const rawData = data.map(item => ({
-                sentiment: item.sentiment.toLowerCase(),
-                total: item.total
-            }));
+            const standardizeSentiment = (s) => {
+                const str = s.toLowerCase();
+                if (str === 'positif') return 'positive';
+                if (str === 'netral') return 'neutral';
+                if (str === 'negatif') return 'negative';
+                return str;
+            };
+
+            const rawData = data
+                .filter(item => item.sentimen)
+                .map(item => ({
+                    sentiment: standardizeSentiment(item.sentimen),
+                    total: item.total
+                }));
 
             const labelMap = Object.fromEntries(
                 rawData.map(item => [item.sentiment, item.total])
             );
 
-            const desiredOrder = ['positive', 'neutral', 'negative'];
-            const labels = desiredOrder.filter(key => labelMap[key] !== undefined);
+            const labels = Object.keys(labelMap);
             const values = labels.map(key => labelMap[key]);
-            const colors = labels.map(label => colorMap[label] || '#ccc');
+            const colors = labels.map(label => colorMap[label] || colorMap.default);
 
-            // Destroy chart instance jika sudah ada
             if (sentimentChartInstance) {
                 sentimentChartInstance.destroy();
             }
@@ -84,9 +98,9 @@ function renderDoughnutChart(range = 'this_month') {
                 }
             });
 
-            // Update custom legend
             const legendContainer = document.getElementById('custom-legend');
             legendContainer.innerHTML = '';
+
             labels.forEach((label, i) => {
                 const percent = ((values[i] / total) * 100).toFixed(0);
                 const item = document.createElement('div');
@@ -105,130 +119,192 @@ function renderDoughnutChart(range = 'this_month') {
             });
         })
         .catch(error => {
-            console.error('Error loading sentiment data:', error);
+            document.getElementById('sentimentChart').style.display = 'none';
+            document.getElementById('custom-legend').style.display = 'none';
+            document.getElementById('noDataMessage').style.display = 'block';
+            document.getElementById('noDataMessage').textContent = 'Terjadi kesalahan saat memuat data.';
         });
 }
 
-// ==== 24H SENTIMENT TREND ==== 
 function render24HourTrendChart() {
     fetch('/overview/chart-24h-sentiment')
         .then(res => res.json())
         .then(data => {
-            // Mengelompokkan data berdasarkan sentimen
+            console.log('Data diterima:', data); // Verifikasi data yang diterima
+
+            // Inisialisasi sentimentData dengan nilai 0 untuk setiap jam
             const sentimentData = {
-                positive: {},
-                negative: {},
-                neutral: {}
+                positive: { '0:00': 0, '4:00': 0, '8:00': 0, '12:00': 0, '16:00': 0, '20:00': 0 },
+                negative: { '0:00': 0, '4:00': 0, '8:00': 0, '12:00': 0, '16:00': 0, '20:00': 0 },
+                neutral: { '0:00': 0, '4:00': 0, '8:00': 0, '12:00': 0, '16:00': 0, '20:00': 0 }
             };
 
+            // Memproses data yang diterima
             data.forEach(item => {
-                const jam = item.jam;
-                const sentiment = item.sentiment.toLowerCase();
-                const count = item.total;
+                const jam = item.hour;
+                const positiveCount = item.positive || 0; // Menggunakan angka atau 0 jika tidak ada
+                const neutralCount = item.neutral || 0;
+                const negativeCount = item.negative || 0;
 
-                if (sentimentData[sentiment]) {
-                    sentimentData[sentiment][jam] = count;
+                // Memastikan jam valid
+                if (sentimentData.positive[jam] !== undefined) {
+                    sentimentData.positive[jam] += positiveCount;
+                    sentimentData.neutral[jam] += neutralCount;
+                    sentimentData.negative[jam] += negativeCount;
+                } else {
+                    console.warn(`Jam ${jam} tidak ditemukan dalam sentimentData`);
                 }
             });
 
-            // Labels untuk x-axis: Jam per 4 jam (00:00, 04:00, 08:00, ...)
-            const labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
+            console.log('Formatted sentimentData:', sentimentData); // Verifikasi data yang diproses
 
-            // Dataset untuk sentimen positif, negatif, netral
+            const labels = ['0:00', '4:00', '8:00', '12:00', '16:00', '20:00'];
+
             const datasetConfig = {
                 positive: { label: 'Positive', borderColor: '#0FAF62', backgroundColor: 'rgba(15, 175, 98, 0.2)' },
                 negative: { label: 'Negative', borderColor: '#E84646', backgroundColor: 'rgba(232, 70, 70, 0.2)' },
                 neutral: { label: 'Neutral', borderColor: '#7B878C', backgroundColor: 'rgba(123, 135, 140, 0.2)' }
             };
 
-            const datasets = Object.entries(sentimentData).map(([key, value]) => ({
-                label: datasetConfig[key].label,
-                data: labels.map(jam => value[jam] || 0),  // Ambil data untuk jam per 4 jam
-                borderColor: datasetConfig[key].borderColor,
-                backgroundColor: datasetConfig[key].backgroundColor,
-                fill: true,  // Enable filling below the line
-                tension: 0.3
-            }));
+            // Menangani nilai yang hilang dan memastikan setiap jam terisi data
+            const datasets = Object.entries(sentimentData).map(([key, value]) => {
+                const dataForSentiment = labels.map(jam => value[jam] || 0); // Set default 0 jika data tidak ada
+
+                console.log(`${key} data:`, dataForSentiment); // Debugging data yang akan digunakan
+
+                return {
+                    label: datasetConfig[key].label,
+                    data: dataForSentiment,
+                    borderColor: datasetConfig[key].borderColor,
+                    backgroundColor: datasetConfig[key].backgroundColor,
+                    fill: true,
+                    tension: 0.3
+                };
+            });
+
+            console.log('Chart data:', {
+                labels,
+                positiveData: sentimentData.positive,
+                negativeData: sentimentData.negative,
+                neutralData: sentimentData.neutral
+            });
 
             const ctx = document.getElementById('sentiment24hChart')?.getContext('2d');
-            if (!ctx) return;
+            if (!ctx) {
+                console.error('Konteks canvas tidak ditemukan');
+                return;
+            }
 
-            new Chart(ctx, {
+            // Hancurkan chart sebelumnya jika ada
+            if (sentiment24hTrendInstance) {
+                sentiment24hTrendInstance.destroy();
+            }
+
+            sentiment24hTrendInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,  // Label jam per 4 jam
+                    labels: labels,
                     datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
+                        legend: { display: true },
                         title: {
                             display: false,
-                            text: '24-Hour Sentiment Trend'
+                            text: 'Trend Sentimen 24 Jam'
                         }
                     },
                     scales: {
                         x: {
-                            title: { display: false, text: 'Time (4-Hour Intervals)' }
+                            title: { display: false }
                         },
                         y: {
                             beginAtZero: true,
-                            min: 0,
                             max: 25,
+                            min: 0,
                             ticks: { stepSize: 5 },
-                            title: { display: false, text: 'Jumlah Sentimen' }
+                            title: { display: false }
                         }
                     }
                 }
             });
         })
         .catch(err => {
-            console.error('Error loading 24h sentiment trend:', err);
+            console.error('Error memuat data trend sentiment 24 jam:', err);
         });
 }
 
-// ==== BAR CHART ==== 
 function renderBarChart(range = 'this_month') {
     fetch(`/api/sentiment-bar-data?range=${range}`)
         .then(res => res.json())
         .then(data => {
-            // Memeriksa jika tidak ada data
+            // Cek apakah data yang diterima adalah objek dengan pesan
             if (data.message) {
-                // Menyembunyikan canvas dan custom legend, serta menampilkan pesan jika tidak ada data
-                document.getElementById('sentimentBarChart').style.display = 'none';  // Menyembunyikan canvas
-                document.getElementById('noDataMessagebar').style.display = 'block';  // Menampilkan pesan no data
-                return;  // Menghentikan eksekusi lebih lanjut jika tidak ada data
+                document.getElementById('sentimentBarChart').style.display = 'none';
+                document.getElementById('noDataMessagebar').style.display = 'block';
+                return; // Keluar dari fungsi jika ada pesan
             }
 
-            // Menyembunyikan pesan, menampilkan canvas jika ada data
-            document.getElementById('sentimentBarChart').style.display = 'block';  // Menampilkan canvas
-            document.getElementById('noDataMessagebar').style.display = 'none';  // Menyembunyikan pesan no data
+            // Cek apakah data yang diterima sudah benar (array)
+            if (!Array.isArray(data)) {
+                document.getElementById('sentimentBarChart').style.display = 'none';
+                document.getElementById('noDataMessagebar').style.display = 'block';
+                return;
+            }
 
-            // Grouping the data by source and sentiment
+            // Tangani jika tidak ada data
+            if (data.length === 0) {
+                document.getElementById('sentimentBarChart').style.display = 'none';
+                document.getElementById('noDataMessagebar').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('sentimentBarChart').style.display = 'block';
+            document.getElementById('noDataMessagebar').style.display = 'none';
+
             const grouped = {};
+
+            // Mengelompokkan data berdasarkan 'source' dan 'sentimen'
             data.forEach(item => {
-                const source = item.source;
-                const sentiment = item.sentiment.toLowerCase();
-                if (!grouped[source]) {
-                    grouped[source] = { positive: 0, neutral: 0, negative: 0 };
+                if (!item.source || (item.positif === undefined && item.netral === undefined && item.negatif === undefined)) {
+                    return; // Skip jika tidak ada data sama sekali untuk sentimen
                 }
-                grouped[source][sentiment] = item.total;
+
+                const source = item.source;
+                const positif = item.positif || 0; // Anggap 0 jika tidak ada data
+                const netral = item.netral || 0;   // Anggap 0 jika tidak ada data
+                const negatif = item.negatif || 0; // Anggap 0 jika tidak ada data
+
+                // Inisialisasi grup jika belum ada
+                if (!grouped[source]) {
+                    grouped[source] = { positif: 0, netral: 0, negatif: 0 };
+                }
+
+                // Tambahkan data untuk masing-masing sentimen
+                grouped[source].positif += positif;
+                grouped[source].netral += netral;
+                grouped[source].negatif += negatif;
             });
 
+            // Ambil labels (source)
             const labels = Object.keys(grouped);
-            const positiveData = labels.map(src => grouped[src].positive || 0);
-            const neutralData = labels.map(src => grouped[src].neutral || 0);
-            const negativeData = labels.map(src => grouped[src].negative || 0);
+            const positifData = labels.map(src => grouped[src].positif);
+            const netralData = labels.map(src => grouped[src].netral);
+            const negatifData = labels.map(src => grouped[src].negatif);
 
+            // Hancurkan chart sebelumnya jika ada
             if (sentimentBarChartInstance) {
                 sentimentBarChartInstance.destroy();
             }
 
             const ctx = document.getElementById('sentimentBarChart')?.getContext('2d');
-            if (!ctx) return;
+            if (!ctx) {
+                return;
+            }
 
+            // Buat chart baru
             sentimentBarChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -236,27 +312,27 @@ function renderBarChart(range = 'this_month') {
                     datasets: [
                         {
                             label: 'Positive',
-                            data: positiveData,
+                            data: positifData,
                             backgroundColor: '#0FAF62',
                             borderRadius: 4,
                             barPercentage: 0.6,
-                            categoryPercentage: 0.5,
+                            categoryPercentage: 0.6,
                         },
                         {
                             label: 'Neutral',
-                            data: neutralData,
+                            data: netralData,
                             backgroundColor: '#7B878C',
                             borderRadius: 4,
                             barPercentage: 0.6,
-                            categoryPercentage: 0.5,
+                            categoryPercentage: 0.6,
                         },
                         {
                             label: 'Negative',
-                            data: negativeData,
+                            data: negatifData,
                             backgroundColor: '#E84646',
                             borderRadius: 4,
                             barPercentage: 0.6,
-                            categoryPercentage: 0.5,
+                            categoryPercentage: 0.6,
                         }
                     ]
                 },
@@ -264,7 +340,6 @@ function renderBarChart(range = 'this_month') {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function (context) {
@@ -288,10 +363,8 @@ function renderBarChart(range = 'this_month') {
             });
         })
         .catch(err => {
-            console.error('Error loading sentiment bar data:', err);
-            // Handle error when API fails
-            document.getElementById('sentimentBarChart').style.display = 'none';  // Menyembunyikan canvas
-            document.getElementById('noDataMessage').style.display = 'block';  // Menampilkan pesan error
+            document.getElementById('sentimentBarChart').style.display = 'none';
+            document.getElementById('noDataMessagebar').style.display = 'block';
         });
 }
 

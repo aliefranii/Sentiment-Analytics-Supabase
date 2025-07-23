@@ -34,3 +34,4 @@ Route::get('/mentions', function () {
 Route::get('/', function () {
     return redirect('/overview');
 });
+

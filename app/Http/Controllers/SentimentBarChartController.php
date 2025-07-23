@@ -12,19 +12,26 @@ class SentimentBarChartController extends Controller
     {
         $range = $request->query('range', 'this_month');
 
+        // Mulai query
         $query = DB::table('news')
-            ->select('source', 'sentiment', DB::raw('COUNT(*) as total'));
+            ->select('source', 'sentimen', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('sentimen');
 
-        // Filter berdasarkan range waktu
+        $query->where('source', 'like', '%WAJO%'); // Filter berdasarkan kata 'wajo' dalam source
+
         switch ($range) {
             case 'today':
                 $query->whereDate('created_at', Carbon::today());
                 break;
 
             case 'this_week':
-                $query->whereBetween('created_at', [
-                    Carbon::now()->startOfWeek(), 
-                    Carbon::now()->endOfWeek()
+                $startOfWeek = Carbon::now()->startOfWeek()->toDateString();
+                $endOfWeek = Carbon::now()->endOfWeek()->toDateString();
+                \Log::info("Rentang waktu minggu ini: $startOfWeek - $endOfWeek");
+
+                $query->whereBetween(DB::raw('DATE(created_at)'), [
+                    $startOfWeek, // Mulai minggu ini
+                    $endOfWeek    // Akhir minggu ini
                 ]);
                 break;
 
@@ -47,15 +54,52 @@ class SentimentBarChartController extends Controller
                 break;
         }
 
-        // Group by source & sentiment
-        $data = $query
-            ->groupBy('source', 'sentiment')
-            ->get();
+        // Ambil semua data berdasarkan source dan sentimen
+        $data = $query->groupBy('source', 'sentimen')->get();
 
-        if ($data->isEmpty()) {
-            return response()->json(['message' => 'Belum ada data hari ini']);
+        // Debugging: Periksa hasil data yang diambil
+        \Log::info("Data yang diambil: ", $data->toArray());
+
+        // Format data agar menjadi array dengan structure yang benar
+        $formattedData = [];
+
+        foreach ($data as $item) {
+            $sentimen = strtolower($item->sentimen);  // Normalisasi sentimen menjadi lowercase
+            if (!isset($formattedData[$item->source])) {
+                // Inisialisasi array untuk source jika belum ada
+                $formattedData[$item->source] = [
+                    'positif' => 0,
+                    'netral' => 0,
+                    'negatif' => 0
+                ];
+            }
+
+            // Menambahkan total count untuk setiap sentimen
+            if ($sentimen == 'positif') {
+                $formattedData[$item->source]['positif'] += $item->total;
+            } elseif ($sentimen == 'negatif') {
+                $formattedData[$item->source]['negatif'] += $item->total;
+            } elseif ($sentimen == 'netral') {
+                $formattedData[$item->source]['netral'] += $item->total;
+            }
         }
 
-        return response()->json($data);
+        // Pastikan data dalam format array
+        $formattedDataArray = array_map(function($sourceData, $source) {
+            return [
+                'source' => $source,
+                'positif' => $sourceData['positif'],
+                'netral' => $sourceData['netral'],
+                'negatif' => $sourceData['negatif'],
+            ];
+        }, $formattedData, array_keys($formattedData));
+
+        // Jika data kosong, kirimkan pesan yang sesuai
+        if (empty($formattedDataArray)) {
+            return response()->json(['message' => 'No data available for this range']);
+        }
+
+        // Kirimkan response dalam bentuk array
+        return response()->json($formattedDataArray);
     }
 }
