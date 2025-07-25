@@ -27,7 +27,6 @@ class SentimentBarChartController extends Controller
             case 'this_week':
                 $startOfWeek = Carbon::now()->startOfWeek()->toDateString();
                 $endOfWeek = Carbon::now()->endOfWeek()->toDateString();
-                \Log::info("Rentang waktu minggu ini: $startOfWeek - $endOfWeek");
 
                 $query->whereBetween(DB::raw('DATE(created_at)'), [
                     $startOfWeek, // Mulai minggu ini
@@ -56,9 +55,6 @@ class SentimentBarChartController extends Controller
 
         // Ambil semua data berdasarkan source dan sentimen
         $data = $query->groupBy('source', 'sentimen')->get();
-
-        // Debugging: Periksa hasil data yang diambil
-        \Log::info("Data yang diambil: ", $data->toArray());
 
         // Format data agar menjadi array dengan structure yang benar
         $formattedData = [];

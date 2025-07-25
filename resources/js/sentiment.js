@@ -414,3 +414,4 @@ document.addEventListener('DOMContentLoaded', function () {
     renderBarChart();
     render24HourTrendChart();
 });
+

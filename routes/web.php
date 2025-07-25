@@ -5,6 +5,7 @@ use App\Http\Controllers\SentimentDonatController;
 use App\Http\Controllers\SentimentBarChartController;
 use App\Http\Controllers\TrendSentiment;
 
+
 // Halaman Overview (menampilkan blade)
 Route::get('/overview', function () {
     return view('overview');

@@ -1,16 +1,20 @@
 <div>
     <nav class="bg-white border-gray-200 shadow-md">
         <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-3 ">
-            <a href="https://flowbite.com/" class="flex items-center space-x-3 rtl:space-x-reverse">
-                <img src="https://flowbite.com/docs/images/logo.svg" class="h-8" alt="Flowbite Logo" />
+            <div href="#" class="flex items-center space-x-3 rtl:space-x-reverse">
+                <a href="https://wajokab.go.id/">
+                    <img src="{{ asset('images/Wajo-Logo.png') }}" class="h-[38px] w-[40px]"alt="Logo">
+                </a>
+                <a href="https://jubir.ai/">
+                    <img src="{{ asset('images/JubirAI-Logo.png') }}" class="h-[38px] w-[38px]"alt="Logo">
+                </a>
                 <div class="flex flex-col">
                     <span class="self-start text-lg font-semibold whitespace-nowrap">Sentiment Analytics
                         Dashboard</span>
                     <span class="self-start text-[12px] text-gray-500 font-semibold whitespace-nowrap">Real-time
-                        sentiment
-                        analysis from news</span>
+                        sentiment analysis from portal news about Wajo </span>
                 </div>
-            </a>
+            </div>
             <button data-collapse-toggle="navbar-default" type="button"
                 class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
                 aria-controls="navbar-default" aria-expanded="false">

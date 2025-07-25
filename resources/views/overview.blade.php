@@ -23,7 +23,7 @@
 
         <!-- Container Section for small screens -->
         <div class="flex justify-center sm:w-full lg:w-[500px]">
-            <x-container></x-container>
+            <x-container :feeds="$feeds" />
         </div>
     </div>
 @endsection

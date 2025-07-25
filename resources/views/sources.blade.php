@@ -10,7 +10,7 @@
             </div>
             <!-- Bar Chart -->
             <div class="flex-1">
-                <x-container></x-container>
+                <x-container :feeds="$feeds" />
             </div>
         </div>
     </div>

@@ -19,4 +19,15 @@
   .legend-item {
     @apply flex items-center gap-2;
   }
+
+  .full-desc {
+    @apply transition-all ease-in-out duration-300;
+    @apply max-h-[500px]; /* Memberikan batas maksimal agar kontainer bisa expand */
+    @apply overflow-hidden;
+  }
+
+  .desc-text {
+    @apply max-h-[130px]; /* Membatasi deskripsi yang ditampilkan */
+    @apply overflow-hidden;
+  }
 }

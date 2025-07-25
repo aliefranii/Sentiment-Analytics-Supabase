@@ -46,9 +46,12 @@
     <div class="overflow-x-auto px-4">
         <div class="flex items-center justify-center min-w-[600px] h-[300px]">
             <canvas id="sentimentBarChart" class="w-full h-full"></canvas>
-            <p id="noDataMessagebar" class="hidden text-gray-500 text-center mt-4">
-                Belum ada data
-            </p>
+            <div id="noDataMessagebar" class="hidden">
+                <div class="flex flex-col space-y-1 justify-center items-center">
+                    <img src="{{ asset('images/Not-Found.png') }}" class="h-[200px] w-[200px]"alt="Logo">
+                    <p class="text-gray-500">Data Tidak Ditemukan!</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

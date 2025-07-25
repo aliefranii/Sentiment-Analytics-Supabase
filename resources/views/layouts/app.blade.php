@@ -21,13 +21,14 @@
 <body class="min-h-screen bg-gray-50">
     <x-navbar></x-navbar>
     <div class="max-w-screen mx-8 my-4 space-y-4 rtl:space-y-reverse">
-        <x-card-statistic></x-card-statistic>
+        <x-card-statistic>{{ $totalNews, $percentageChangeNews, $totalPositiveSentimentOverall, $percentageChangeEngagementRate }}</x-card-statistic>
         <x-navtabs>
         </x-navtabs>
         @yield('content')
     </div>
     <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 
 </html>
