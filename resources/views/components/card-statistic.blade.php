@@ -67,7 +67,7 @@
             <!-- Card Header (Engagement Rate) -->
             <div class="p-2 flex justify-between items-center">
                 <div>
-                    <p class="text-[12px] font-semibold text-gray-900 mb-[4px]">ENGAGEMENT RATE</p>
+                    <p class="text-[12px] font-semibold text-gray-900 mb-[4px]">OVERALL SENTIMENT</p>
                     <p class="text-xl font-bold text-gray-700 mb-[4px]">8.4%</p>
                     <div class="flex items-center text-green-500 text-[12px]">
                         <i class="ph-lg ph-trend-up"></i>

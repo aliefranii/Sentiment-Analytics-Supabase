@@ -10,12 +10,6 @@ class TrendSentiment extends Controller
 {
     public function get24HourSentimentTrend()
     {
-        // Waktu lokal Asia/Jakarta, dikonversi ke UTC untuk match Supabase
-        $now = Carbon::now('Asia/Jakarta');
-
-        // Mengonversi waktu lokal ke UTC
-        $nowUtc = $now->copy()->timezone('UTC');
-        
         // Ambil data hanya untuk hari ini
         $data = DB::table('news')
             ->select(
@@ -24,9 +18,10 @@ class TrendSentiment extends Controller
                 'source',
                 DB::raw("COUNT(*) as total")
             )
-            ->whereDate('created_at', $nowUtc->toDateString())  // Filter berdasarkan hari ini
+            // PERBAIKAN: Menambahkan () setelah Carbon::now
+            ->whereDate('created_at', Carbon::now()->toDateString())
             ->whereNotNull('sentimen')
-            ->where('source', 'like', '%WAJO%')  // Filter untuk mengambil source yang mengandung kata 'wajo'
+            ->where('source', 'like', '%WAJO%')
             ->groupBy(
                 DB::raw("FLOOR(EXTRACT(HOUR FROM created_at) / 4)"),
                 'sentimen',
@@ -43,7 +38,7 @@ class TrendSentiment extends Controller
             if (!isset($formattedData[$item->jam])) {
                 $formattedData[$item->jam] = [
                     'positif' => 0,
-                    'netral' => 0,
+                    'netral'  => 0,
                     'negatif' => 0
                 ];
             }
@@ -62,9 +57,9 @@ class TrendSentiment extends Controller
         $response = [];
         foreach ($formattedData as $jam => $sentimen) {
             $response[] = [
-                'hour' => $jam,
+                'hour'     => $jam,
                 'positive' => $sentimen['positif'],
-                'neutral' => $sentimen['netral'],
+                'neutral'  => $sentimen['netral'],
                 'negative' => $sentimen['negatif']
             ];
         }

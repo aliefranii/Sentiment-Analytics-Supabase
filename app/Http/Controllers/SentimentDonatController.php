@@ -12,55 +12,49 @@ class SentimentDonatController extends Controller
     {
         $range = $request->query('range', 'this_month');
 
-        // Ambil waktu lokal Indonesia
-        $now = Carbon::now('Asia/Jakarta');
-
-        // Mulai query dan pastikan sentimen tidak null
         $query = DB::table('news')
             ->select('sentimen', DB::raw('count(*) as total'))
             ->whereNotNull('sentimen');
 
-            $query->where('source', 'like', '%WAJO%');
+        // -- PERBAIKAN DI SINI --
+        // Dibuat case-insensitive agar konsisten dan aman
+        $query->where(DB::raw('LOWER(source)'), 'like', '%wajo%');
 
-        // Filter berdasarkan range waktu, dikonversi ke UTC
+        // Menggunakan satu instance Carbon untuk konsistensi
+        $now = Carbon::now();
+
         switch ($range) {
             case 'today':
-                $query->whereBetween('created_at', [
-                    $now->copy()->startOfDay()->timezone('UTC'),
-                    $now->copy()->endOfDay()->timezone('UTC')
-                ]);
+                // Menggunakan whereDate adalah cara paling andal untuk "hari ini"
+                $query->whereDate('created_at', $now);
                 break;
 
             case 'this_week':
                 $query->whereBetween('created_at', [
-                    $now->copy()->startOfWeek()->timezone('UTC'),
-                    $now->copy()->endOfWeek()->timezone('UTC')
+                    $now->copy()->startOfWeek(),
+                    $now->copy()->endOfWeek()
                 ]);
                 break;
 
             case 'this_month':
                 $query->whereBetween('created_at', [
-                    $now->copy()->startOfMonth()->timezone('UTC'),
-                    $now->copy()->endOfMonth()->timezone('UTC')
+                    $now->copy()->startOfMonth(),
+                    $now->copy()->endOfMonth()
                 ]);
                 break;
 
             case 'this_year':
-                $query->whereBetween('created_at', [
-                    $now->copy()->startOfYear()->timezone('UTC'),
-                    $now->copy()->endOfYear()->timezone('UTC')
-                ]);
+                $query->whereYear('created_at', $now->year);
                 break;
 
             default:
                 $query->whereBetween('created_at', [
-                    $now->copy()->startOfMonth()->timezone('UTC'),
-                    $now->copy()->endOfMonth()->timezone('UTC')
+                    $now->copy()->startOfMonth(),
+                    $now->copy()->endOfMonth()
                 ]);
                 break;
         }
 
-        // Group dan ambil hasil
         $data = $query->groupBy('sentimen')->get();
 
         if ($data->isEmpty()) {

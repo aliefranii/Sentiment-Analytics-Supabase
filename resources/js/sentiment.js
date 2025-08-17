@@ -114,7 +114,6 @@ function renderDoughnutChart(range = 'this_month') {
             document.getElementById('sentimentChart').style.display = 'none';
             document.getElementById('custom-legend').style.display = 'none';
             document.getElementById('noDataMessage').style.display = 'block';
-            document.getElementById('noDataMessage').textContent = 'Terjadi kesalahan saat memuat data.';
         });
 }
 
@@ -240,7 +239,7 @@ function renderBarChart(range = 'this_month') {
                     plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } } },
                     scales: {
                         x: { ticks: { font: { size: 12 } } },
-                        y: { beginAtZero: true, max: 50, min: 0, ticks: { stepSize: 10 } }
+                        y: { beginAtZero: true, ticks: { stepSize: 50 } }
                     }
                 }
             });

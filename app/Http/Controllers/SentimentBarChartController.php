@@ -17,38 +17,39 @@ class SentimentBarChartController extends Controller
             ->select('source', 'sentimen', DB::raw('COUNT(*) as total'))
             ->whereNotNull('sentimen');
 
-        $query->where('source', 'like', '%WAJO%'); // Filter berdasarkan kata 'wajo' dalam source
+        // -- PERUBAHAN UTAMA DI SINI --
+        // Query diubah menjadi case-insensitive agar cocok dengan 'KABAR-Wajo'
+        $query->where(DB::raw('LOWER(source)'), 'like', '%wajo%');
+
+        $now = Carbon::now(); // Menggunakan satu instance Carbon untuk konsistensi
 
         switch ($range) {
             case 'today':
-                $query->whereDate('created_at', Carbon::today());
+                $query->whereDate('created_at', $now);
                 break;
 
             case 'this_week':
-                $startOfWeek = Carbon::now()->startOfWeek()->toDateString();
-                $endOfWeek = Carbon::now()->endOfWeek()->toDateString();
-
-                $query->whereBetween(DB::raw('DATE(created_at)'), [
-                    $startOfWeek, // Mulai minggu ini
-                    $endOfWeek    // Akhir minggu ini
+                $query->whereBetween('created_at', [
+                    $now->copy()->startOfWeek(),
+                    $now->copy()->endOfWeek()
                 ]);
                 break;
 
             case 'this_month':
                 $query->whereBetween('created_at', [
-                    Carbon::now()->startOfMonth(), 
-                    Carbon::now()->endOfMonth()
+                    $now->copy()->startOfMonth(),
+                    $now->copy()->endOfMonth()
                 ]);
                 break;
 
             case 'this_year':
-                $query->whereYear('created_at', Carbon::now()->year);
+                $query->whereYear('created_at', $now->year);
                 break;
 
             default:
                 $query->whereBetween('created_at', [
-                    Carbon::now()->startOfMonth(), 
-                    Carbon::now()->endOfMonth()
+                    $now->copy()->startOfMonth(),
+                    $now->copy()->endOfMonth()
                 ]);
                 break;
         }
@@ -60,7 +61,7 @@ class SentimentBarChartController extends Controller
         $formattedData = [];
 
         foreach ($data as $item) {
-            $sentimen = strtolower($item->sentimen);  // Normalisasi sentimen menjadi lowercase
+            $sentimen = strtolower($item->sentimen); // Normalisasi sentimen menjadi lowercase
             if (!isset($formattedData[$item->source])) {
                 // Inisialisasi array untuk source jika belum ada
                 $formattedData[$item->source] = [

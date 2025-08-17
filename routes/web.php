@@ -31,8 +31,12 @@ Route::get('/mentions', function () {
     return view('mentions');
 });
 
+Route::get('/login', function () {
+    return view('login');
+});
+
 // Redirect root ke /overview
 Route::get('/', function () {
-    return redirect('/overview');
+    return redirect('/login');
 });
 

@@ -11,7 +11,7 @@
                 <x-container :feeds="$feeds" />
             </div>
             <div class="flex sm:w-full lg:w-[450px]">
-                <x-container :feeds="$feeds" />
+                <x-feeds :feeds="$feeds" />
             </div>
         </div>
     </div>
