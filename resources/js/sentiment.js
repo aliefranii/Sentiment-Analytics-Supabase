@@ -7,114 +7,123 @@ function capitalize(str) {
 }
 
 function renderDoughnutChart(range = 'this_month') {
-    fetch(`/overview/sentiment-data?range=${range}`)
-        .then(res => res.json())
-        .then(data => {
-            if (!data || data.message || data.length === 0) {
-                document.getElementById('sentimentChart').style.display = 'none';
-                document.getElementById('custom-legend').style.display = 'none';
-                document.getElementById('noDataMessage').style.display = 'block';
-                return;
-            }
+  const chartEl   = document.getElementById('sentimentChart');
+  const legendEl  = document.getElementById('custom-legend');
+  const noDataEl  = document.getElementById('noDataMessage');
+  const noDataTxt = document.getElementById('noDataText'); // opsional, kalau ada
 
-            const total = data.reduce((acc, item) => acc + item.total, 0);
-            if (total === 0) {
-                document.getElementById('noDataMessage').textContent = 'Data tersedia, tapi semua total = 0';
-                document.getElementById('noDataMessage').style.display = 'block';
-                document.getElementById('sentimentChart').style.display = 'none';
-                document.getElementById('custom-legend').style.display = 'none';
-                return;
-            }
+  // === Saat ganti waktu: sembunyikan & hancurkan chart lama ===
+  if (window.sentimentChartInstance) {
+    window.sentimentChartInstance.destroy();
+    window.sentimentChartInstance = null;
+  }
+  chartEl.style.display  = 'none';
+  legendEl.style.display = 'none';
+  legendEl.innerHTML     = '';
+  // noDataMessage jangan diubah di sini; biar ditentukan setelah fetch
 
-            const colorMap = {
-                positive: '#0FAF62',
-                neutral: '#7B878C',
-                negative: '#E84646',
-                default: '#ccc'
-            };
+  fetch(`/overview/sentiment-data?range=${range}`)
+    .then(res => res.json())
+    .then(data => {
+      // --- kondisi: tidak ada data/response error ---
+      if (!Array.isArray(data) || data.length === 0 || data.message) {
+        if (noDataTxt) noDataTxt.textContent = 'Data Tidak Ditemukan!';
+        noDataEl.style.display = 'block';   // tampilkan ONLY noDataMessage
+        return;
+      }
 
-            const standardizeSentiment = (s) => {
-                const str = s.toLowerCase();
-                if (str === 'positif') return 'positive';
-                if (str === 'netral') return 'neutral';
-                if (str === 'negatif') return 'negative';
-                return str;
-            };
+      const total = data.reduce((acc, item) => acc + (item?.total || 0), 0);
+      if (total === 0) {
+        if (noDataTxt) noDataTxt.textContent = 'Data tersedia, tapi semua total = 0';
+        noDataEl.style.display = 'block';   // tampilkan ONLY noDataMessage
+        return;
+      }
 
-            const rawData = data
-                .filter(item => item.sentimen)
-                .map(item => ({
-                    sentiment: standardizeSentiment(item.sentimen),
-                    total: item.total
-                }));
+      // --- ada data: sembunyikan noDataMessage, tampilkan chart + legend ---
+      noDataEl.style.display = 'none';
+      chartEl.style.display  = 'block';
+      legendEl.style.display = 'flex';
 
-            const labelMap = Object.fromEntries(
-                rawData.map(item => [item.sentiment, item.total])
-            );
+      const colorMap = { positive:'#0FAF62', neutral:'#7B878C', negative:'#E84646', default:'#ccc' };
+      const standardize = s => {
+        const str = (s || '').toLowerCase();
+        if (str === 'positif') return 'positive';
+        if (str === 'netral')  return 'neutral';
+        if (str === 'negatif') return 'negative';
+        return str;
+        };
 
-            const labels = Object.keys(labelMap);
-            const values = labels.map(key => labelMap[key]);
-            const colors = labels.map(label => colorMap[label] || colorMap.default);
+      const raw = data
+        .filter(i => i?.sentimen != null)
+        .map(i => ({ sentiment: standardize(i.sentimen), total: i.total || 0 }));
 
-            if (sentimentChartInstance) sentimentChartInstance.destroy();
+      // gabungkan jika ada label duplikat
+      const labelMap = {};
+      raw.forEach(({ sentiment, total }) => {
+        labelMap[sentiment] = (labelMap[sentiment] || 0) + total;
+      });
 
-            const ctx = document.getElementById('sentimentChart')?.getContext('2d');
-            if (!ctx) return;
+      const labels = Object.keys(labelMap);
+      const values = labels.map(k => labelMap[k]);
+      const colors = labels.map(l => colorMap[l] || colorMap.default);
 
-            sentimentChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels.map(capitalize),
-                    datasets: [{
-                        data: values,
-                        backgroundColor: colors,
-                        borderColor: '#ffffff',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    const val = context.parsed;
-                                    const percent = ((val / total) * 100).toFixed(1);
-                                    return `${context.label}: ${val} (${percent}%)`;
-                                }
-                            }
-                        }
-                    }
+      const ctx = chartEl.getContext('2d');
+      window.sentimentChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels.map(capitalize),
+          datasets: [{
+            data: values,
+            backgroundColor: colors,
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '70%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => {
+                  const val = context.parsed || 0;
+                  const percent = ((val / total) * 100).toFixed(1);
+                  return `${context.label}: ${val} (${percent}%)`;
                 }
-            });
+              }
+            }
+          }
+        }
+      });
 
-            const legendContainer = document.getElementById('custom-legend');
-            legendContainer.innerHTML = '';
-            labels.forEach((label, i) => {
-                const percent = ((values[i] / total) * 100).toFixed(0);
-                const item = document.createElement('div');
-                item.className = 'legend-item flex items-center gap-2 text-sm text-gray-700 font-medium';
+      // render legend
+      labels.forEach((label, i) => {
+        const percent = ((values[i] / total) * 100).toFixed(0);
+        const item = document.createElement('div');
+        item.className = 'legend-item flex items-center gap-2 text-sm text-gray-700 font-medium';
 
-                const dot = document.createElement('span');
-                dot.className = 'legend-color w-3 h-3 rounded-full inline-block';
-                dot.style.backgroundColor = colors[i];
+        const dot = document.createElement('span');
+        dot.className = 'legend-color w-3 h-3 rounded-full inline-block';
+        dot.style.backgroundColor = colors[i];
 
-                const text = document.createElement('span');
-                text.textContent = `${capitalize(label)} : ${percent}%`;
+        const text = document.createElement('span');
+        text.textContent = `${capitalize(label)} : ${percent}%`;
 
-                item.appendChild(dot);
-                item.appendChild(text);
-                legendContainer.appendChild(item);
-            });
-        })
-        .catch(() => {
-            document.getElementById('sentimentChart').style.display = 'none';
-            document.getElementById('custom-legend').style.display = 'none';
-            document.getElementById('noDataMessage').style.display = 'block';
-        });
+        item.appendChild(dot);
+        item.appendChild(text);
+        legendEl.appendChild(item);
+      });
+    })
+    .catch(() => {
+      // error fetch → tampilkan ONLY noDataMessage
+      if (noDataTxt) noDataTxt.textContent = 'Data Tidak Ditemukan!';
+      noDataEl.style.display = 'block';
+      chartEl.style.display  = 'none';
+      legendEl.style.display = 'none';
+      legendEl.innerHTML     = '';
+    });
 }
 
 function render24HourTrendChart() {
@@ -174,81 +183,97 @@ function render24HourTrendChart() {
 }
 
 function renderBarChart(range = 'this_month') {
-    fetch(`/api/sentiment-bar-data?range=${range}`)
-        .then(res => res.json())
-        .then(data => {
-            if (!Array.isArray(data) || data.length === 0 || data.message) {
-                document.getElementById('sentimentBarChart').style.display = 'none';
-                document.getElementById('noDataMessagebar').style.display = 'block';
-                return;
+  const canvasEl   = document.getElementById('sentimentBarChart');
+  const noDataEl   = document.getElementById('noDataMessagebar');
+
+  // Reset: hancurkan chart lama & sembunyikan canvas, biarkan noData ditentukan setelah fetch
+  if (window.sentimentBarChartInstance) {
+    window.sentimentBarChartInstance.destroy();
+    window.sentimentBarChartInstance = null;
+  }
+  canvasEl.style.display = 'none';
+  noDataEl.style.display = 'none';
+
+  fetch(`/api/sentiment-bar-data?range=${range}`)
+    .then(res => res.json())
+    .then(data => {
+      // Validasi dasar
+      if (!Array.isArray(data) || data.length === 0 || data.message) {
+        noDataEl.style.display = 'block';
+        return;
+      }
+
+      // Group per source
+      const grouped = {};
+      let grandTotal = 0;
+      data.forEach(item => {
+        const src = item.source;
+        if (!src) return;
+        if (!grouped[src]) grouped[src] = { positif: 0, netral: 0, negatif: 0 };
+        const p = item.positif || 0;
+        const n = item.netral  || 0;
+        const g = item.negatif || 0;
+        grouped[src].positif += p;
+        grouped[src].netral  += n;
+        grouped[src].negatif += g;
+        grandTotal += p + n + g;
+      });
+
+      // Jika setelah agregasi total tetap 0 → no data
+      if (grandTotal === 0) {
+        noDataEl.style.display = 'block';
+        return;
+      }
+
+      const labels      = Object.keys(grouped);
+      const positifData = labels.map(src => grouped[src].positif);
+      const netralData  = labels.map(src => grouped[src].netral);
+      const negatifData = labels.map(src => grouped[src].negatif);
+
+      // Render chart
+      const ctx = canvasEl.getContext('2d');
+      window.sentimentBarChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Positive', data: positifData, backgroundColor: '#0FAF62', borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.6 },
+            { label: 'Neutral',  data: netralData,  backgroundColor: '#7B878C', borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.6 },
+            { label: 'Negative', data: negatifData, backgroundColor: '#E84646', borderRadius: 4, barPercentage: 0.6, categoryPercentage: 0.6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}`
+              }
             }
+          },
+          scales: {
+            x: { ticks: { font: { size: 12 } } },
+            y: { beginAtZero: true, ticks: { stepSize: 50 } }
+          }
+        }
+      });
 
-            const grouped = {};
-            data.forEach(item => {
-                const src = item.source;
-                if (!src) return;
-                if (!grouped[src]) grouped[src] = { positif: 0, netral: 0, negatif: 0 };
-                grouped[src].positif += item.positif || 0;
-                grouped[src].netral  += item.netral  || 0;
-                grouped[src].negatif += item.negatif || 0;
-            });
-
-            const labels = Object.keys(grouped);
-            const positifData = labels.map(src => grouped[src].positif);
-            const netralData  = labels.map(src => grouped[src].netral);
-            const negatifData = labels.map(src => grouped[src].negatif);
-
-            if (sentimentBarChartInstance) sentimentBarChartInstance.destroy();
-            const ctx = document.getElementById('sentimentBarChart')?.getContext('2d');
-            if (!ctx) return;
-
-            sentimentBarChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            label: 'Positive',
-                            data: positifData,
-                            backgroundColor: '#0FAF62',
-                            borderRadius: 4,
-                            barPercentage: 0.6,
-                            categoryPercentage: 0.6
-                        },
-                        {
-                            label: 'Neutral',
-                            data: netralData,
-                            backgroundColor: '#7B878C',
-                            borderRadius: 4,
-                            barPercentage: 0.6,
-                            categoryPercentage: 0.6
-                        },
-                        {
-                            label: 'Negative',
-                            data: negatifData,
-                            backgroundColor: '#E84646',
-                            borderRadius: 4,
-                            barPercentage: 0.6,
-                            categoryPercentage: 0.6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw}` } } },
-                    scales: {
-                        x: { ticks: { font: { size: 12 } } },
-                        y: { beginAtZero: true, ticks: { stepSize: 50 } }
-                    }
-                }
-            });
-        })
-        .catch(() => {
-            document.getElementById('sentimentBarChart').style.display = 'none';
-            document.getElementById('noDataMessagebar').style.display = 'block';
-        });
+      // Tampilkan canvas, sembunyikan no-data
+      noDataEl.style.display = 'none';
+      canvasEl.style.display = 'block';
+    })
+    .catch(() => {
+      // Error fetch → tampilkan only no-data
+      if (window.sentimentBarChartInstance) {
+        window.sentimentBarChartInstance.destroy();
+        window.sentimentBarChartInstance = null;
+      }
+      canvasEl.style.display = 'none';
+      noDataEl.style.display = 'block';
+    });
 }
+
 
 document.addEventListener('DOMContentLoaded', function () {
     // Doughnut dropdown handler
