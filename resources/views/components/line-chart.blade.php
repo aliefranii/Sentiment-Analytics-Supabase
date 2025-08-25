@@ -14,6 +14,12 @@
             <div class="relative w-full h-[300px] px-4 pt-4 overflow-x-auto">
                 <!-- Canvas yang mengisi penuh kontainer dan bisa di-scroll horizontal -->
                 <canvas id="sentiment24hChart" class="w-full h-full"></canvas>
+                <div id="noDataMessage24h" class="hidden">
+                    <div class="flex flex-col space-y-1 justify-center items-center">
+                        <img src="{{ asset('images/Not-Found.png') }}" class="h-[200px] w-[200px]"alt="Logo">
+                        <p class="text-gray-500">Data Tidak Ditemukan!</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

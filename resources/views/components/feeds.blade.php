@@ -24,6 +24,7 @@
                                     'tribun-wajo' => 'images/Tribun-Logo.png',
                                     'kabar-wajo' => 'images/KabarWajo-Logo.png',
                                     'rakyatsulsel-wajo' => 'images/RakyatSulsel-Logo.png',
+                                    'jurnal8-wajo' => 'images/Jurnal8Wajo-Logo.png',
                                     default => 'images/Wajo-logo.png', // Fallback jika sumber tidak dikenali
                                 };
                             @endphp
