@@ -3,7 +3,7 @@
 @section('content')
     <div class="flex flex-col space-y-4 rtl:space-y-reverse lg:space-y-4">
         <div>
-            <x-container></x-container>
+            <x-recomendation-card :rows="$rows" :client="$client" />
         </div>
         <!-- Wrapper for Doughnut and Bar Chart -->
         <div class="flex flex-col lg:flex-row lg:space-x-4 w-full">
