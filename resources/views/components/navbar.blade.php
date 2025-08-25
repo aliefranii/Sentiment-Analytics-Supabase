@@ -28,27 +28,11 @@
             <div class="hidden w-full md:block md:w-auto" id="navbar-default">
                 <div
                     class="font-medium flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-[16px] rtl:space-x-reverse md:mt-0 md:border-0 md:bg-white">
-                    <button
-                        class="bg-transparent text-gray-900 hover:text-gray-200 md:bg-gray-900 md:text-white text-[12px] p-[12px] rounded-md focus:outline-none flex items-center">
-                        <i class="ph-xl ph-calendar mr-[8px]"></i>
-                        Last 24 Hours
-                    </button>
-                    <button
-                        class="bg-transparent text-gray-900 hover:text-gray-200 md:bg-gray-900 md:text-white text-[12px] p-[12px] rounded-md focus:outline-none flex items-center">
-                        <i class="ph-xl ph-funnel mr-[8px]"></i>
-                        Filter
-                    </button>
-                    <button
-                        class="bg-transparent text-gray-900 hover:text-gray-200 md:bg-gray-900 md:text-white text-[12px] p-[12px] rounded-md focus:outline-none flex items-center">
-                        <i class="ph-xl ph-download-simple mr-[8px]"></i>
-                        Export
-                    </button>
-                    <button
+                    <button type="button" onclick="location.reload()"
                         class="bg-transparent text-gray-900 hover:text-gray-200 md:bg-blue-500 md:text-white text-[12px] p-[12px] rounded-md focus:outline-none flex items-center">
                         <i class="ph-xl ph-arrow-counter-clockwise mr-[8px]"></i>
                         Refresh
                     </button>
-
                 </div>
             </div>
         </div>
